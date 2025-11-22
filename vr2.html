@@ -757,4 +757,1165 @@
     // Firebase helper functions
     async function loadAllData() {
       try {
-        const tasksSnapshot =
+        const tasksSnapshot = await getDocs(collection(db, 'tasks'));
+        allTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const groupsSnapshot = await getDocs(collection(db, 'groups'));
+        allGroups = groupsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const teamsSnapshot = await getDocs(collection(db, 'teams'));
+        allTeams = teamsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const gamesSnapshot = await getDocs(collection(db, 'games'));
+        allGames = gamesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const gameTasksSnapshot = await getDocs(collection(db, 'gameTasks'));
+        allGameTasks = gameTasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        updateUI();
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showToast('שגיאה בטעינת הנתונים');
+      }
+    }
+
+    function setupRealtimeListeners() {
+      onSnapshot(collection(db, 'tasks'), (snapshot) => {
+        allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateUI();
+      });
+
+      onSnapshot(collection(db, 'groups'), (snapshot) => {
+        allGroups = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateUI();
+      });
+
+      onSnapshot(collection(db, 'teams'), (snapshot) => {
+        allTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateUI();
+      });
+
+      onSnapshot(collection(db, 'games'), (snapshot) => {
+        allGames = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateUI();
+      });
+
+      onSnapshot(collection(db, 'gameTasks'), (snapshot) => {
+        allGameTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        updateUI();
+      });
+    }
+
+    function updateUI() {
+      renderTasksList();
+      renderGroupsList();
+      if (currentEditingGroupId) {
+        renderTeamsList();
+      }
+      
+      const selectGroupDiv = document.getElementById('selectGroupForGame');
+      if (selectGroupDiv && selectGroupDiv.innerHTML !== '') {
+        renderGroupSelectionForGame();
+      }
+      
+      const previousGamesDiv = document.getElementById('previousGamesList');
+      if (previousGamesDiv && previousGamesDiv.innerHTML !== '') {
+        renderPreviousGames();
+      }
+      
+      if (currentActiveGame) {
+        const game = allGames.find(g => g.id === currentActiveGame);
+        if (game) {
+          renderDashboardContent();
+        }
+      }
+    }
+
+    function setupEventListeners() {
+      document.getElementById('loginButton').addEventListener('click', handleLogin);
+      document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+
+      document.getElementById('settingsBtn').addEventListener('click', () => showScreen('settings'));
+      document.getElementById('newGameBtn').addEventListener('click', handleNewGame);
+      document.getElementById('previousGamesBtn').addEventListener('click', handlePreviousGames);
+      
+      document.getElementById('backFromSettings').addEventListener('click', () => showScreen('main'));
+      document.getElementById('backFromEditGroup').addEventListener('click', () => {
+        currentEditingGroupId = null;
+        showScreen('settings');
+      });
+
+      document.getElementById('addTaskBtn').addEventListener('click', handleAddTask);
+      document.getElementById('createGroupBtn').addEventListener('click', handleCreateGroup);
+      document.getElementById('addTeamBtn').addEventListener('click', handleAddTeam);
+
+      document.getElementById('backFromNewGame').addEventListener('click', () => {
+        selectedGroupForNewGame = null;
+        showScreen('main');
+      });
+      document.getElementById('startGameBtn').addEventListener('click', handleStartGame);
+
+      document.getElementById('backFromDashboard').addEventListener('click', () => showScreen('main'));
+      document.getElementById('selectTaskBtn').addEventListener('click', () => showScreen('selectTask'));
+      document.getElementById('showResultsBtn').addEventListener('click', showResults);
+      document.getElementById('showGroupDashBtn').addEventListener('click', showGroupModal);
+      document.getElementById('showPrevTasksBtn').addEventListener('click', showPreviousTasks);
+
+      document.getElementById('backFromSelectTask').addEventListener('click', () => showScreen('dashboard'));
+
+      document.getElementById('backFromTaskExecution').addEventListener('click', () => {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        showScreen('dashboard');
+      });
+
+      document.getElementById('backFromResults').addEventListener('click', () => showScreen('dashboard'));
+      document.getElementById('backFromPrevTasks').addEventListener('click', () => showScreen('dashboard'));
+      document.getElementById('backFromPreviousGames').addEventListener('click', () => showScreen('main'));
+
+      document.getElementById('closeGroupModal').addEventListener('click', () => {
+        document.getElementById('groupModal').style.display = 'none';
+      });
+      document.getElementById('changeGroupBtn').addEventListener('click', () => {
+        document.getElementById('changeGroupModal').style.display = 'flex';
+        renderChangeGroupModal();
+      });
+      document.getElementById('closeChangeGroupModal').addEventListener('click', () => {
+        document.getElementById('changeGroupModal').style.display = 'none';
+      });
+
+      document.getElementById('closeGameDetailsModal').addEventListener('click', () => {
+        document.getElementById('gameDetailsModal').style.display = 'none';
+      });
+      document.getElementById('continueFromDetailsBtn').addEventListener('click', () => {
+        const gameId = document.getElementById('continueFromDetailsBtn').dataset.gameId;
+        const gameName = document.getElementById('continueFromDetailsBtn').dataset.gameName;
+        document.getElementById('gameDetailsModal').style.display = 'none';
+        continueGame(gameId, gameName);
+      });
+
+      document.getElementById('closeTaskDetailsModal').addEventListener('click', () => {
+        document.getElementById('taskDetailsModal').style.display = 'none';
+      });
+
+      document.getElementById('closeEditTaskResultsModal').addEventListener('click', () => {
+        document.getElementById('editTaskResultsModal').style.display = 'none';
+      });
+
+      document.getElementById('saveTaskResultsBtn').addEventListener('click', saveTaskResults);
+    }
+
+    function handleLogin() {
+      const password = document.getElementById('passwordInput').value;
+      const errorMsg = document.getElementById('errorMessage');
+      
+      if (password === '1234') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainScreen').style.display = 'block';
+        document.querySelector('.background-animation').style.display = 'none';
+        errorMsg.style.display = 'none';
+      } else {
+        errorMsg.style.display = 'block';
+      }
+    }
+
+    function showScreen(screen) {
+      document.getElementById('mainScreen').style.display = 'none';
+      document.getElementById('settingsScreen').style.display = 'none';
+      document.getElementById('editGroupScreen').style.display = 'none';
+      document.getElementById('newGameScreen').style.display = 'none';
+      document.getElementById('dashboardScreen').style.display = 'none';
+      document.getElementById('selectTaskScreen').style.display = 'none';
+      document.getElementById('taskExecutionScreen').style.display = 'none';
+      document.getElementById('resultsScreen').style.display = 'none';
+      document.getElementById('prevTasksScreen').style.display = 'none';
+      document.getElementById('previousGamesScreen').style.display = 'none';
+
+      if (screen === 'main') {
+        document.getElementById('mainScreen').style.display = 'block';
+      } else if (screen === 'settings') {
+        document.getElementById('settingsScreen').style.display = 'block';
+      } else if (screen === 'editGroup') {
+        document.getElementById('editGroupScreen').style.display = 'block';
+      } else if (screen === 'newGame') {
+        document.getElementById('newGameScreen').style.display = 'block';
+        renderGroupSelectionForGame();
+      } else if (screen === 'dashboard') {
+        document.getElementById('dashboardScreen').style.display = 'block';
+        renderDashboardContent();
+      } else if (screen === 'selectTask') {
+        document.getElementById('selectTaskScreen').style.display = 'block';
+        renderTasksForSelection();
+      } else if (screen === 'taskExecution') {
+        document.getElementById('taskExecutionScreen').style.display = 'block';
+      } else if (screen === 'results') {
+        document.getElementById('resultsScreen').style.display = 'block';
+      } else if (screen === 'prevTasks') {
+        document.getElementById('prevTasksScreen').style.display = 'block';
+      } else if (screen === 'previousGames') {
+        document.getElementById('previousGamesScreen').style.display = 'block';
+        renderPreviousGames();
+      }
+    }
+
+    function handleNewGame() {
+      if (allGroups.length === 0) {
+        showToast('אין חלוקות קבוצות. צור חלוקה בהגדרות תחילה');
+        return;
+      }
+      selectedGroupForNewGame = null;
+      showScreen('newGame');
+    }
+
+    function handlePreviousGames() {
+      showScreen('previousGames');
+    }
+
+    function renderGroupSelectionForGame() {
+      const container = document.getElementById('selectGroupForGame');
+      const startBtn = document.getElementById('startGameBtn');
+      
+      if (allGroups.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין חלוקות קבוצות. צור חלוקה בהגדרות</div>';
+        startBtn.disabled = true;
+        return;
+      }
+
+      container.innerHTML = allGroups.map(group => {
+        const teams = allTeams.filter(t => t.groupId === group.id);
+        const isSelected = selectedGroupForNewGame === group.id;
+        return `
+          <div class="list-item" style="cursor: pointer; border: 2px solid ${isSelected ? '#667eea' : 'transparent'};" onclick="window.selectGroupForGame('${group.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title">${group.name}</div>
+              <div class="list-item-desc">${teams.length} קבוצות</div>
+            </div>
+            ${isSelected ? '<span style="color: #667eea; font-weight: bold;">✓ נבחר</span>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      startBtn.disabled = !selectedGroupForNewGame;
+    }
+
+    window.selectGroupForGame = function(groupId) {
+      selectedGroupForNewGame = groupId;
+      renderGroupSelectionForGame();
+    }
+
+    async function handleStartGame() {
+      if (!selectedGroupForNewGame) {
+        showToast('נא לבחור חלוקת קבוצות');
+        return;
+      }
+
+      const teams = allTeams.filter(t => t.groupId === selectedGroupForNewGame);
+      if (teams.length === 0) {
+        showToast('החלוקה הנבחרת אינה מכילה קבוצות');
+        return;
+      }
+
+      const today = new Date();
+      const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+      
+      const todayGames = allGames.filter(g => g.gameDate === dateStr);
+      const dailyCounter = todayGames.length + 1;
+      
+      const gameName = `מירוץ המשימות ${dateStr} (${dailyCounter})`;
+      
+      try {
+        const docRef = await addDoc(collection(db, 'games'), {
+          gameName: gameName,
+          gameDate: dateStr,
+          dailyCounter: dailyCounter,
+          activeGroupId: selectedGroupForNewGame,
+          status: 'active',
+          createdAt: new Date().toISOString()
+        });
+
+        currentActiveGame = docRef.id;
+        document.getElementById('dashboardTitle').textContent = `לוח מחוונים - ${gameName}`;
+        showScreen('dashboard');
+        showToast('המשחק התחיל!');
+      } catch (error) {
+        console.error('Error creating game:', error);
+        showToast('שגיאה ביצירת המשחק');
+      }
+    }
+
+    function renderDashboardContent() {
+      const container = document.getElementById('dashboardContent');
+      
+      if (!currentActiveGame) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">לחץ על "בחר משימה" להתחלת משימה חדשה</div>';
+        return;
+      }
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === currentActiveGame);
+      const uniqueTasks = [...new Set(gameTasks.map(gt => gt.taskId))];
+      
+      if (uniqueTasks.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">לחץ על "בחר משימה" להתחלת משימה חדשה</div>';
+      } else {
+        container.innerHTML = `<div style="text-align: center; padding: 20px; color: #666;">סך הכל ${uniqueTasks.length} משימות הושלמו</div>`;
+      }
+    }
+
+    function renderTasksForSelection() {
+      const container = document.getElementById('tasksForSelection');
+      
+      if (allTasks.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין משימות. הוסף משימות בהגדרות</div>';
+        return;
+      }
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === currentActiveGame);
+      const completedTaskIds = [...new Set(gameTasks.map(gt => gt.taskId))];
+      
+      const availableTasks = allTasks.filter(t => !completedTaskIds.includes(t.id));
+      const completedTasks = allTasks.filter(t => completedTaskIds.includes(t.id));
+
+      let html = '';
+      
+      if (availableTasks.length > 0) {
+        html += '<h3 style="color: #667eea; margin-bottom: 15px;">משימות זמינות</h3>';
+        html += availableTasks.map(task => `
+          <div class="list-item" style="cursor: pointer;" onclick="window.startTaskExecution('${task.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title">${task.name}</div>
+              <div class="list-item-desc">${task.description}</div>
+            </div>
+            <button class="action-button">התחל →</button>
+          </div>
+        `).join('');
+      }
+      
+      if (completedTasks.length > 0) {
+        html += '<h3 style="color: #999; margin: 30px 0 15px 0;">משימות שבוצעו</h3>';
+        html += completedTasks.map(task => `
+          <div class="list-item" style="cursor: pointer; opacity: 0.6; background: #e8e8e8;" onclick="window.startTaskExecution('${task.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title" style="color: #666;">${task.name}</div>
+              <div class="list-item-desc" style="color: #999;">${task.description}</div>
+            </div>
+            <button class="action-button secondary">התחל שוב →</button>
+          </div>
+        `).join('');
+      }
+
+      container.innerHTML = html;
+    }
+
+    window.startTaskExecution = function(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      currentTaskExecution = {
+        taskId: taskId,
+        taskName: task.name,
+        taskDesc: task.description
+      };
+
+      document.getElementById('taskExecTitle').textContent = task.name;
+      
+      const detailsHtml = `
+        <h3 style="color: #667eea; margin-bottom: 15px;">${task.name}</h3>
+        <p style="color: #666; line-height: 1.6;">${task.description}</p>
+      `;
+      
+      document.getElementById('taskDetails').innerHTML = detailsHtml;
+      
+      const timerHtml = `
+        <div style="text-align: center;">
+          <button class="action-button" id="startTimerBtn" style="font-size: 20px; padding: 20px 40px;">התחל טיימר</button>
+        </div>
+      `;
+      
+      document.getElementById('timerSection').innerHTML = timerHtml;
+      document.getElementById('startTimerBtn').addEventListener('click', startTimer);
+      
+      showScreen('taskExecution');
+    }
+
+    function startTimer() {
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      const teams = allTeams.filter(t => t.groupId === game.activeGroupId);
+      if (teams.length === 0) return;
+
+      timerStartTime = Date.now();
+      finishedTeams = [];
+      
+      let timerHtml = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; font-weight: bold; color: #667eea; margin-bottom: 20px;" id="timerDisplay">00:00</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+      `;
+      
+      teams.forEach((team, index) => {
+        timerHtml += `
+          <div id="teamTimer${index}">
+            <button class="action-button" style="width: 100%; padding: 20px;" onclick="window.stopTeamTimer('${team.id}', ${index}, '${team.name}')">
+              עצור טיימר<br>${team.name}
+            </button>
+          </div>
+        `;
+      });
+      
+      timerHtml += '</div>';
+      
+      document.getElementById('timerSection').innerHTML = timerHtml;
+      
+      timerInterval = setInterval(updateTimerDisplay, 100);
+    }
+
+    function updateTimerDisplay() {
+      if (!timerStartTime) return;
+      
+      const elapsed = Date.now() - timerStartTime;
+      const seconds = Math.floor(elapsed / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      
+      const display = `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+      const displayElement = document.getElementById('timerDisplay');
+      if (displayElement) {
+        displayElement.textContent = display;
+      }
+    }
+
+    window.stopTeamTimer = function(teamId, teamIndex, teamName) {
+      if (finishedTeams.find(ft => ft.teamId === teamId)) {
+        showToast('הקבוצה כבר סיימה');
+        return;
+      }
+
+      const completedTime = Date.now() - timerStartTime;
+      const rank = finishedTeams.length + 1;
+      
+      finishedTeams.push({
+        teamId: teamId,
+        teamName: teamName,
+        rank: rank,
+        completedTime: completedTime
+      });
+
+      const teamContainer = document.getElementById(`teamTimer${teamIndex}`);
+      if (teamContainer) {
+        teamContainer.innerHTML = `
+          <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; text-align: center;">
+            <div style="font-weight: bold; color: #667eea; margin-bottom: 10px;">${teamName}</div>
+            <div style="color: #666;">מקום ${rank}</div>
+            <div style="margin-top: 10px;">
+              <button class="action-button" style="width: 100%; margin-bottom: 5px;" onclick="window.confirmTeamComplete('${teamId}', true)">כל הקבוצה הגיעה</button>
+              <button class="action-button secondary" style="width: 100%;" onclick="window.confirmTeamComplete('${teamId}', false)">חסרים ילדים</button>
+            </div>
+          </div>
+        `;
+      }
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      const teams = allTeams.filter(t => t.groupId === game.activeGroupId);
+      
+      if (finishedTeams.length === teams.length) {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+    }
+
+    window.confirmTeamComplete = async function(teamId, allPresent) {
+      const finished = finishedTeams.find(ft => ft.teamId === teamId);
+      if (!finished) return;
+
+      let points = 0;
+      if (allPresent) {
+        if (finished.rank === 1) points = 3;
+        else if (finished.rank === 2) points = 2;
+        else if (finished.rank === 3) points = 1;
+        else points = 0;
+      }
+
+      try {
+        await addDoc(collection(db, 'gameTasks'), {
+          gameId: currentActiveGame,
+          taskId: currentTaskExecution.taskId,
+          teamId: teamId,
+          rank: finished.rank,
+          completedTime: finished.completedTime,
+          allMembersPresent: allPresent,
+          points: points,
+          createdAt: new Date().toISOString()
+        });
+
+        const allConfirmed = finishedTeams.every(ft => {
+          return allGameTasks.some(gt => gt.teamId === ft.teamId && gt.taskId === currentTaskExecution.taskId);
+        });
+
+        if (allConfirmed) {
+          showToast('המשימה הושלמה!');
+          setTimeout(() => {
+            showScreen('dashboard');
+          }, 1500);
+        } else {
+          showToast('תוצאת הקבוצה נשמרה');
+        }
+      } catch (error) {
+        console.error('Error saving task result:', error);
+        showToast('שגיאה בשמירת התוצאה');
+      }
+    }
+
+    function showResults() {
+      if (!currentActiveGame) {
+        showToast('אין משחק פעיל');
+        return;
+      }
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      const teams = allTeams.filter(t => t.groupId === game.activeGroupId);
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === currentActiveGame);
+
+      const teamScores = teams.map(team => {
+        const teamTasks = gameTasks.filter(gt => gt.teamId === team.id);
+        const totalPoints = teamTasks.reduce((sum, gt) => sum + gt.points, 0);
+        return {
+          teamName: team.name,
+          totalPoints: totalPoints
+        };
+      });
+
+      teamScores.sort((a, b) => b.totalPoints - a.totalPoints);
+
+      let html = '<h3 style="color: #667eea; margin-bottom: 20px;">לוח ניקוד</h3>';
+      
+      teamScores.forEach((team, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+        html += `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${medal} מקום ${index + 1}: ${team.teamName}</div>
+            </div>
+            <div style="font-size: 24px; font-weight: bold; color: #667eea;">${team.totalPoints} נק'</div>
+          </div>
+        `;
+      });
+
+      document.getElementById('resultsContent').innerHTML = html;
+      showScreen('results');
+    }
+
+    function showPreviousTasks() {
+      if (!currentActiveGame) {
+        showToast('אין משחק פעיל');
+        return;
+      }
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === currentActiveGame);
+      
+      if (gameTasks.length === 0) {
+        document.getElementById('prevTasksContent').innerHTML = '<div class="empty-state">אין משימות קודמות במשחק זה</div>';
+        showScreen('prevTasks');
+        return;
+      }
+
+      const taskIds = [...new Set(gameTasks.map(gt => gt.taskId))];
+      
+      let html = '';
+      taskIds.forEach(taskId => {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+        
+        html += `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${task.name}</div>
+            </div>
+            <div>
+              <button class="action-button" style="margin-left: 10px;" onclick="window.viewTaskDetails('${taskId}')">הצג</button>
+              <button class="action-button secondary" onclick="window.editTaskResults('${taskId}')">ערוך</button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('prevTasksContent').innerHTML = html;
+      showScreen('prevTasks');
+    }
+
+    window.viewTaskDetails = function(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === currentActiveGame && gt.taskId === taskId);
+      
+      document.getElementById('taskDetailsModalTitle').textContent = task.name;
+      
+      let html = `
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #667eea; margin-bottom: 10px;">תיאור המשימה</h4>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; line-height: 1.6;">
+            ${task.description}
+          </div>
+        </div>
+        <div>
+          <h4 style="color: #667eea; margin-bottom: 10px;">תוצאות</h4>
+      `;
+      
+      const sortedResults = [...gameTasks].sort((a, b) => a.rank - b.rank);
+      
+      sortedResults.forEach(result => {
+        const team = allTeams.find(t => t.id === result.teamId);
+        const teamName = team ? team.name : 'לא ידוע';
+        
+        html += `
+          <div class="list-item" style="margin-bottom: 10px;">
+            <div class="list-item-content">
+              <div class="list-item-title">מקום ${result.rank}: ${teamName}</div>
+              <div class="list-item-desc">${result.allMembersPresent ? 'כל הקבוצה הגיעה' : 'חסרו ילדים'}</div>
+            </div>
+            <div style="font-size: 20px; font-weight: bold; color: #667eea;">${result.points} נק'</div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+
+      document.getElementById('taskDetailsModalContent').innerHTML = html;
+      document.getElementById('taskDetailsModal').style.display = 'flex';
+    }
+
+    let currentEditingTaskResults = null;
+
+    window.editTaskResults = function(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === currentActiveGame && gt.taskId === taskId);
+      currentEditingTaskResults = gameTasks;
+      
+      document.getElementById('editTaskResultsTitle').textContent = `עריכת תוצאות: ${task.name}`;
+      
+      let html = '';
+      
+      const sortedResults = [...gameTasks].sort((a, b) => a.rank - b.rank);
+      
+      sortedResults.forEach((result, index) => {
+        const team = allTeams.find(t => t.id === result.teamId);
+        const teamName = team ? team.name : 'לא ידוע';
+        
+        html += `
+          <div class="list-item" style="margin-bottom: 15px;">
+            <div style="flex: 1;">
+              <div style="font-weight: bold; color: #333; margin-bottom: 10px;">${teamName}</div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 5px;">
+                  <span style="font-size: 14px;">מקום:</span>
+                  <input type="number" min="1" value="${result.rank}" 
+                    style="width: 60px; padding: 5px; border: 2px solid #e0e0e0; border-radius: 5px;"
+                    data-result-id="${result.id}" data-field="rank">
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px;">
+                  <input type="checkbox" ${result.allMembersPresent ? 'checked' : ''}
+                    data-result-id="${result.id}" data-field="allMembersPresent">
+                  <span style="font-size: 14px;">כל הקבוצה הגיעה</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px;">
+                  <span style="font-size: 14px;">נקודות:</span>
+                  <input type="number" min="0" value="${result.points}" 
+                    style="width: 60px; padding: 5px; border: 2px solid #e0e0e0; border-radius: 5px;"
+                    data-result-id="${result.id}" data-field="points">
+                </label>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('editTaskResultsContent').innerHTML = html;
+      document.getElementById('editTaskResultsModal').style.display = 'flex';
+    }
+
+    async function saveTaskResults() {
+      const inputs = document.querySelectorAll('[data-result-id]');
+      const updates = new Map();
+
+      inputs.forEach(input => {
+        const resultId = input.dataset.resultId;
+        const field = input.dataset.field;
+        
+        if (!updates.has(resultId)) {
+          const result = currentEditingTaskResults.find(r => r.id === resultId);
+          if (result) {
+            updates.set(resultId, { ...result });
+          }
+        }
+
+        const resultUpdate = updates.get(resultId);
+        if (resultUpdate) {
+          if (field === 'rank') {
+            resultUpdate.rank = parseInt(input.value) || 1;
+          } else if (field === 'allMembersPresent') {
+            resultUpdate.allMembersPresent = input.checked;
+          } else if (field === 'points') {
+            resultUpdate.points = parseInt(input.value) || 0;
+          }
+        }
+      });
+
+      let successCount = 0;
+      for (const [resultId, resultUpdate] of updates) {
+        try {
+          const docRef = doc(db, 'gameTasks', resultId);
+          await updateDoc(docRef, {
+            rank: resultUpdate.rank,
+            allMembersPresent: resultUpdate.allMembersPresent,
+            points: resultUpdate.points
+          });
+          successCount++;
+        } catch (error) {
+          console.error('Error updating result:', error);
+        }
+      }
+
+      if (successCount === updates.size) {
+        document.getElementById('editTaskResultsModal').style.display = 'none';
+        showToast('התוצאות עודכנו בהצלחה');
+        currentEditingTaskResults = null;
+      } else {
+        showToast('שגיאה בעדכון חלק מהתוצאות');
+      }
+    }
+
+    function showGroupModal() {
+      if (!currentActiveGame) {
+        showToast('אין משחק פעיל');
+        return;
+      }
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      const group = allGroups.find(g => g.id === game.activeGroupId);
+      const teams = allTeams.filter(t => t.groupId === game.activeGroupId);
+
+      let html = `<h4 style="margin-bottom: 15px;">${group ? group.name : 'לא ידוע'}</h4>`;
+      html += '<div class="teams-container">';
+      
+      teams.forEach(team => {
+        html += `
+          <div class="team-card">
+            <div class="team-name">${team.name}</div>
+            <div class="team-members">${team.members}</div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+
+      document.getElementById('groupModalContent').innerHTML = html;
+      document.getElementById('groupModal').style.display = 'flex';
+    }
+
+    function renderChangeGroupModal() {
+      const container = document.getElementById('changeGroupContent');
+      
+      container.innerHTML = allGroups.map(group => {
+        const teams = allTeams.filter(t => t.groupId === group.id);
+        return `
+          <div class="list-item" style="cursor: pointer;" onclick="window.changeActiveGroup('${group.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title">${group.name}</div>
+              <div class="list-item-desc">${teams.length} קבוצות</div>
+            </div>
+            <button class="action-button">בחר</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.changeActiveGroup = async function(newGroupId) {
+      if (!currentActiveGame) return;
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      try {
+        const docRef = doc(db, 'games', currentActiveGame);
+        await updateDoc(docRef, {
+          activeGroupId: newGroupId
+        });
+
+        document.getElementById('changeGroupModal').style.display = 'none';
+        document.getElementById('groupModal').style.display = 'none';
+        showToast('החלוקה שונתה בהצלחה');
+        renderDashboardContent();
+      } catch (error) {
+        console.error('Error updating group:', error);
+        showToast('שגיאה בשינוי החלוקה');
+      }
+    }
+
+    function renderPreviousGames() {
+      const container = document.getElementById('previousGamesList');
+      
+      const previousGames = allGames.filter(g => g.status === 'active' || g.status === 'completed');
+      
+      if (previousGames.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין משחקים קודמים</div>';
+        return;
+      }
+
+      previousGames.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      container.innerHTML = previousGames.map(game => {
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${game.gameName}</div>
+            </div>
+            <div>
+              <button class="action-button" style="margin-left: 10px;" onclick="window.viewGameDetails('${game.id}')">צפה</button>
+              <button class="action-button secondary" onclick="window.continueGame('${game.id}', '${game.gameName}')">המשך</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.viewGameDetails = function(gameId) {
+      const game = allGames.find(g => g.id === gameId);
+      if (!game) return;
+
+      document.getElementById('gameDetailsTitle').textContent = game.gameName;
+      
+      const group = allGroups.find(g => g.id === game.activeGroupId);
+      const teams = allTeams.filter(t => t.groupId === game.activeGroupId);
+      const gameTasks = allGameTasks.filter(gt => gt.gameId === game.id);
+      const uniqueTaskIds = [...new Set(gameTasks.map(gt => gt.taskId))];
+
+      let html = `
+        <div style="margin-bottom: 25px;">
+          <h4 style="color: #667eea; margin-bottom: 10px;">פרטי המשחק</h4>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <div style="margin-bottom: 8px;"><strong>תאריך:</strong> ${game.gameDate}</div>
+            <div style="margin-bottom: 8px;"><strong>חלוקת קבוצות:</strong> ${group ? group.name : 'לא ידוע'}</div>
+            <div><strong>מספר משימות:</strong> ${uniqueTaskIds.length}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <h4 style="color: #667eea; margin-bottom: 10px;">קבוצות</h4>
+          <div class="teams-container">
+      `;
+      
+      teams.forEach(team => {
+        html += `
+          <div class="team-card">
+            <div class="team-name">${team.name}</div>
+            <div class="team-members">${team.members}</div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+
+      if (uniqueTaskIds.length > 0) {
+        html += '<div><h4 style="color: #667eea; margin-bottom: 10px;">לוח ניקוד</h4>';
+        
+        const teamScores = teams.map(team => {
+          const teamTasks = gameTasks.filter(gt => gt.teamId === team.id);
+          const totalPoints = teamTasks.reduce((sum, gt) => sum + gt.points, 0);
+          return {
+            teamName: team.name,
+            totalPoints: totalPoints
+          };
+        });
+
+        teamScores.sort((a, b) => b.totalPoints - a.totalPoints);
+
+        teamScores.forEach((team, index) => {
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+          html += `
+            <div class="list-item" style="margin-bottom: 10px;">
+              <div class="list-item-content">
+                <div class="list-item-title">${medal} מקום ${index + 1}: ${team.teamName}</div>
+              </div>
+              <div style="font-size: 24px; font-weight: bold; color: #667eea;">${team.totalPoints} נק'</div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+      }
+
+      document.getElementById('gameDetailsContent').innerHTML = html;
+      document.getElementById('continueFromDetailsBtn').dataset.gameId = gameId;
+      document.getElementById('continueFromDetailsBtn').dataset.gameName = game.gameName;
+      document.getElementById('gameDetailsModal').style.display = 'flex';
+    }
+
+    window.continueGame = function(gameId, gameName) {
+      currentActiveGame = gameId;
+      document.getElementById('dashboardTitle').textContent = `לוח מחוונים - ${gameName}`;
+      showScreen('dashboard');
+      showToast('ממשיך משחק');
+    }
+
+    async function handleAddTask() {
+      const name = document.getElementById('taskName').value.trim();
+      const description = document.getElementById('taskDesc').value.trim();
+
+      if (!name || !description) {
+        showToast('נא למלא את כל השדות');
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, 'tasks'), {
+          name: name,
+          description: description,
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById('taskName').value = '';
+        document.getElementById('taskDesc').value = '';
+        showToast('המשימה נוספה בהצלחה');
+      } catch (error) {
+        console.error('Error adding task:', error);
+        showToast('שגיאה בהוספת המשימה');
+      }
+    }
+
+    async function handleCreateGroup() {
+      const groupName = document.getElementById('groupName').value.trim();
+
+      if (!groupName) {
+        showToast('נא להזין שם לחלוקה');
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, 'groups'), {
+          name: groupName,
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById('groupName').value = '';
+        showToast('החלוקה נוצרה בהצלחה');
+      } catch (error) {
+        console.error('Error creating group:', error);
+        showToast('שגיאה ביצירת החלוקה');
+      }
+    }
+
+    async function handleAddTeam() {
+      const teamName = document.getElementById('teamName').value.trim();
+      const members = document.getElementById('teamMembers').value.trim();
+
+      if (!teamName || !members) {
+        showToast('נא למלא את כל השדות');
+        return;
+      }
+
+      const currentTeams = allTeams.filter(t => t.groupId === currentEditingGroupId);
+      if (currentTeams.length >= 4) {
+        showToast('ניתן להוסיף עד 4 קבוצות בלבד');
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, 'teams'), {
+          groupId: currentEditingGroupId,
+          name: teamName,
+          members: members,
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById('teamName').value = '';
+        document.getElementById('teamMembers').value = '';
+        showToast('הקבוצה נוספה בהצלחה');
+      } catch (error) {
+        console.error('Error adding team:', error);
+        showToast('שגיאה בהוספת הקבוצה');
+      }
+    }
+
+    function renderTasksList() {
+      const container = document.getElementById('tasksList');
+      
+      if (allTasks.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין משימות עדיין. הוסף את המשימה הראשונה!</div>';
+        return;
+      }
+
+      container.innerHTML = allTasks.map(task => `
+        <div class="list-item">
+          <div class="list-item-content">
+            <div class="list-item-title">${task.name}</div>
+            <div class="list-item-desc">${task.description}</div>
+          </div>
+          <div>
+            <button class="action-button" style="margin-left: 10px;" onclick="window.editTask('${task.id}')">ערוך</button>
+            <button class="delete-button" onclick="window.deleteTask('${task.id}')">מחק</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderGroupsList() {
+      const container = document.getElementById('groupsList');
+      
+      if (allGroups.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין חלוקות עדיין. צור את החלוקה הראשונה!</div>';
+        return;
+      }
+
+      container.innerHTML = allGroups.map(group => {
+        const teams = allTeams.filter(t => t.groupId === group.id);
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${group.name}</div>
+              <div class="list-item-desc">${teams.length} קבוצות</div>
+            </div>
+            <div>
+              <button class="action-button" style="margin-left: 10px;" onclick="window.editGroup('${group.id}', '${group.name}')">ערוך</button>
+              <button class="delete-button" onclick="window.deleteGroup('${group.id}')">מחק</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTeamsList() {
+      const container = document.getElementById('teamsList');
+      const teams = allTeams.filter(t => t.groupId === currentEditingGroupId);
+      
+      if (teams.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין קבוצות בחלוקה זו. הוסף את הקבוצה הראשונה!</div>';
+        return;
+      }
+
+      container.innerHTML = teams.map(team => `
+        <div class="list-item">
+          <div class="list-item-content">
+            <div class="list-item-title">${team.name}</div>
+            <div class="list-item-desc">${team.members}</div>
+          </div>
+          <button class="delete-button" onclick="window.deleteTeam('${team.id}')">מחק</button>
+        </div>
+      `).join('');
+    }
+
+    window.editGroup = function(groupId, groupName) {
+      currentEditingGroupId = groupId;
+      document.getElementById('editGroupTitle').textContent = `עריכת חלוקה: ${groupName}`;
+      renderTeamsList();
+      showScreen('editGroup');
+    }
+
+    window.editTask = function(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      document.getElementById('taskName').value = task.name;
+      document.getElementById('taskDesc').value = task.description;
+      
+      const addBtn = document.getElementById('addTaskBtn');
+      addBtn.textContent = 'שמור שינויים';
+      addBtn.onclick = async () => {
+        const name = document.getElementById('taskName').value.trim();
+        const description = document.getElementById('taskDesc').value.trim();
+
+        if (!name || !description) {
+          showToast('נא למלא את כל השדות');
+          return;
+        }
+
+        try {
+          const docRef = doc(db, 'tasks', taskId);
+          await updateDoc(docRef, {
+            name: name,
+            description: description
+          });
+
+          document.getElementById('taskName').value = '';
+          document.getElementById('taskDesc').value = '';
+          addBtn.textContent = 'הוסף משימה';
+          addBtn.onclick = handleAddTask;
+          showToast('המשימה עודכנה בהצלחה');
+        } catch (error) {
+          console.error('Error updating task:', error);
+          showToast('שגיאה בעדכון המשימה');
+        }
+      };
+      
+      showToast('ערוך את המשימה ולחץ שמור');
+    }
+
+    window.deleteTask = async function(taskId) {
+      try {
+        await deleteDoc(doc(db, 'tasks', taskId));
+        showToast('המשימה נמחקה בהצלחה');
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        showToast('שגיאה במחיקת המשימה');
+      }
+    }
+
+    window.deleteGroup = async function(groupId) {
+      try {
+        const teamsToDelete = allTeams.filter(t => t.groupId === groupId);
+        
+        for (const team of teamsToDelete) {
+          await deleteDoc(doc(db, 'teams', team.id));
+        }
+
+        await deleteDoc(doc(db, 'groups', groupId));
+        showToast('החלוקה נמחקה בהצלחה');
+      } catch (error) {
+        console.error('Error deleting group:', error);
+        showToast('שגיאה במחיקת החלוקה');
+      }
+    }
+
+    window.deleteTeam = async function(teamId) {
+      try {
+        await deleteDoc(doc(db, 'teams', teamId));
+        showToast('הקבוצה נמחקה בהצלחה');
+      } catch (error) {
+        console.error('Error deleting team:', error);
+        showToast('שגיאה במחיקת הקבוצה');
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Initialize app
+    async function init() {
+      setupEventListeners();
+      await loadAllData();
+      setupRealtimeListeners();
+    }
+
+    init();
+  </script>
+ </body>
+</html>
