@@ -1,0 +1,1870 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מירוץ המשימות</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    /* מסך כניסה */
+    .login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* אנימציות רקע */
+    .background-animation {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .circle:nth-child(1) {
+      width: 80px;
+      height: 80px;
+      top: 10%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+
+    .circle:nth-child(2) {
+      width: 120px;
+      height: 120px;
+      top: 60%;
+      left: 80%;
+      animation-delay: 2s;
+    }
+
+    .circle:nth-child(3) {
+      width: 60px;
+      height: 60px;
+      top: 80%;
+      left: 20%;
+      animation-delay: 4s;
+    }
+
+    .circle:nth-child(4) {
+      width: 100px;
+      height: 100px;
+      top: 20%;
+      left: 75%;
+      animation-delay: 1s;
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0) scale(1);
+        opacity: 0.3;
+      }
+      50% {
+        transform: translateY(-30px) scale(1.1);
+        opacity: 0.5;
+      }
+    }
+
+    /* כרטיס כניסה */
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 50px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      animation: slideUp 0.8s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo-container {
+      margin-bottom: 30px;
+      animation: bounce 1s ease-in-out 0.5s;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .logo {
+      font-size: 64px;
+      animation: rotate 3s ease-in-out infinite;
+    }
+
+    @keyframes rotate {
+      0%, 100% {
+        transform: rotate(0deg);
+      }
+      50% {
+        transform: rotate(10deg);
+      }
+    }
+
+    .app-title {
+      font-size: 32px;
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 10px;
+      animation: fadeIn 1s ease-in 0.3s both;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    .welcome-text {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 30px;
+      animation: fadeIn 1s ease-in 0.5s both;
+    }
+
+    .password-container {
+      margin-bottom: 20px;
+      animation: fadeIn 1s ease-in 0.7s both;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeIn 1s ease-in 0.9s both;
+    }
+
+    .login-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-button:active {
+      transform: translateY(0);
+    }
+
+    .error-message {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* מסך ראשי */
+    .main-screen {
+      display: none;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      color: #667eea;
+      margin: 0;
+      font-size: 32px;
+    }
+
+    .main-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .main-button {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      text-align: center;
+    }
+
+    .main-button:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .main-button-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .main-button-text {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* מסכים משניים */
+    .secondary-screen {
+      display: none;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .back-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.2s;
+    }
+
+    .back-button:hover {
+      background: #5568d3;
+    }
+
+    .section-title {
+      font-size: 28px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .content-card {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .action-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-left: 10px;
+    }
+
+    .action-button:hover {
+      background: #5568d3;
+    }
+
+    .action-button.secondary {
+      background: #95a5a6;
+    }
+
+    .action-button.secondary:hover {
+      background: #7f8c8d;
+    }
+
+    .list-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .list-item-content {
+      flex: 1;
+    }
+
+    .list-item-title {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .list-item-desc {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .delete-button {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .delete-button:hover {
+      background: #c0392b;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .teams-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .team-card {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .team-name {
+      font-weight: bold;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .team-members {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      display: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      display: block;
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .login-card {
+        padding: 40px 30px;
+      }
+
+      .app-title {
+        font-size: 28px;
+      }
+
+      .main-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body><!-- רקע אנימציה -->
+  <div class="background-animation">
+   <div class="circle"></div>
+   <div class="circle"></div>
+   <div class="circle"></div>
+   <div class="circle"></div>
+  </div><!-- מסך כניסה -->
+  <div class="login-screen" id="loginScreen">
+   <div class="login-card">
+    <div class="logo-container">
+     <div class="logo">
+      🏆
+     </div>
+    </div>
+    <h1 class="app-title" id="appTitle">מירוץ המשימות</h1>
+    <p class="welcome-text" id="welcomeText">ברוכים הבאים למירוץ המשימות!</p>
+    <div class="password-container"><label for="passwordInput" class="form-label">הזן סיסמה:</label> <input type="password" id="passwordInput" class="password-input" placeholder="סיסמה">
+    </div><button class="login-button" id="loginButton">כניסה</button>
+    <div class="error-message" id="errorMessage">
+     סיסמה שגויה, נסה שוב
+    </div>
+   </div>
+  </div><!-- מסך ראשי -->
+  <div class="main-screen" id="mainScreen">
+   <div class="header">
+    <h1>מירוץ המשימות</h1>
+   </div>
+   <div class="main-buttons">
+    <div class="main-button" id="newGameBtn">
+     <div class="main-button-icon">
+      🎮
+     </div>
+     <div class="main-button-text">
+      משחק חדש
+     </div>
+    </div>
+    <div class="main-button" id="previousGamesBtn">
+     <div class="main-button-icon">
+      📋
+     </div>
+     <div class="main-button-text">
+      משחק קודם
+     </div>
+    </div>
+    <div class="main-button" id="settingsBtn">
+     <div class="main-button-icon">
+      ⚙️
+     </div>
+     <div class="main-button-text">
+      הגדרות
+     </div>
+    </div>
+   </div>
+  </div><!-- מסך מ��חק חדש -->
+  <div class="secondary-screen" id="newGameScreen"><button class="back-button" id="backFromNewGame">← חזור</button>
+   <h2 class="section-title">משחק חדש</h2>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">בחר חלוקת קבוצות</h3>
+    <div id="selectGroupForGame"></div><button class="action-button" id="startGameBtn" style="margin-top: 20px;" disabled>התחל משחק</button>
+   </div>
+  </div><!-- מסך לוח מחוונים -->
+  <div class="secondary-screen" id="dashboardScreen"><button class="back-button" id="backFromDashboard">← חזור</button>
+   <h2 class="section-title" id="dashboardTitle">לוח מחוונים</h2>
+   <div class="content-card">
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;"><button class="action-button" id="selectTaskBtn">בחר משימה</button> <button class="action-button secondary" id="showResultsBtn">הצג תוצאות</button> <button class="action-button secondary" id="showGroupDashBtn">הצג חלוקה</button> <button class="action-button secondary" id="showPrevTasksBtn">הצג משימות קודמות</button>
+    </div>
+    <div id="dashboardContent" style="text-align: center; padding: 40px; color: #666;">
+     לחץ על "בחר משימה" להתח��ת משימה חדשה
+    </div>
+   </div>
+  </div><!-- מסך בחירת משימה -->
+  <div class="secondary-screen" id="selectTaskScreen"><button class="back-button" id="backFromSelectTask">← חזור</button>
+   <h2 class="section-title">בחר משימה</h2>
+   <div class="content-card">
+    <div id="tasksForSelection"></div>
+   </div>
+  </div><!-- מסך ביצוע משימה -->
+  <div class="secondary-screen" id="taskExecutionScreen"><button class="back-button" id="backFromTaskExecution">← חזור</button>
+   <h2 class="section-title" id="taskExecTitle">משימה</h2>
+   <div class="content-card">
+    <div id="taskDetails" style="margin-bottom: 30px;"></div>
+    <div id="timerSection"></div>
+   </div>
+  </div><!-- מסך תוצאות -->
+  <div class="secondary-screen" id="resultsScreen"><button class="back-button" id="backFromResults">← חזור</button>
+   <h2 class="section-title">תוצאות המשח��</h2>
+   <div class="content-card">
+    <div id="resultsContent"></div>
+   </div>
+  </div><!-- מסך משימות קודמות -->
+  <div class="secondary-screen" id="prevTasksScreen"><button class="back-button" id="backFromPrevTasks">← חזור</button>
+   <h2 class="section-title">משימות קודמות</h2>
+   <div class="content-card">
+    <div id="prevTasksContent"></div>
+   </div>
+  </div><!-- מסך משחקים קודמים -->
+  <div class="secondary-screen" id="previousGamesScreen"><button class="back-button" id="backFromPreviousGames">← חזור</button>
+   <h2 class="section-title">משחקים קודמים</h2>
+   <div class="content-card">
+    <div id="previousGamesList"></div>
+   </div>
+  </div><!-- חלון צף הצגת חלוקה -->
+  <div id="groupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+   <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
+    <h3 style="color: #667eea; margin-bottom: 20px;">החלוקה הנוכחית</h3>
+    <div id="groupModalContent"></div>
+    <div style="margin-top: 20px; display: flex; gap: 10px;"><button class="action-button" id="changeGroupBtn">שנה חלוקה</button> <button class="action-button secondary" id="closeGroupModal">סגור</button>
+    </div>
+   </div>
+  </div><!-- חלון צף שינוי חלוקה -->
+  <div id="changeGroupModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2001; align-items: center; justify-content: center;">
+   <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 80%; overflow-y: auto;">
+    <h3 style="color: #667eea; margin-bottom: 20px;">בחר חלוקה חדשה</h3>
+    <div id="changeGroupContent"></div><button class="action-button secondary" id="closeChangeGroupModal" style="margin-top: 20px;">ביטול</button>
+   </div>
+  </div><!-- חלון פרטי משחק -->
+  <div id="gameDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+   <div style="background: white; padding: 30px; border-radius: 15px; max-width: 800px; width: 90%; max-height: 80%; overflow-y: auto;">
+    <h3 style="color: #667eea; margin-bottom: 20px;" id="gameDetailsTitle">פרטי משחק</h3>
+    <div id="gameDetailsContent"></div>
+    <div style="margin-top: 20px; display: flex; gap: 10px;"><button class="action-button" id="continueFromDetailsBtn">המשך משחק</button> <button class="action-button secondary" id="closeGameDetailsModal">סגור</button>
+    </div>
+   </div>
+  </div><!-- חלון הצגת פרטי משימה -->
+  <div id="taskDetailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2001; align-items: center; justify-content: center;">
+   <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90%; max-height: 80%; overflow-y: auto;">
+    <h3 style="color: #667eea; margin-bottom: 20px;" id="taskDetailsModalTitle">פרטי משימה</h3>
+    <div id="taskDetailsModalContent"></div><button class="action-button secondary" id="closeTaskDetailsModal" style="margin-top: 20px;">סגור</button>
+   </div>
+  </div><!-- חלון עריכת תוצאות משימה -->
+  <div id="editTaskResultsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2001; align-items: center; justify-content: center;">
+   <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 90%; max-height: 80%; overflow-y: auto;">
+    <h3 style="color: #667eea; margin-bottom: 20px;" id="editTaskResultsTitle">עריכת תוצאות משימה</h3>
+    <div id="editTaskResultsContent"></div>
+    <div style="margin-top: 20px; display: flex; gap: 10px;"><button class="action-button" id="saveTaskResultsBtn">שמור שינויים</button> <button class="action-button secondary" id="closeEditTaskResultsModal">ביטול</button>
+    </div>
+   </div>
+  </div><!-- מסך הגדרות -->
+  <div class="secondary-screen" id="settingsScreen"><button class="back-button" id="backFromSettings">← חזור</button>
+   <h2 class="section-title">ה��דרות</h2>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">הוספת משימות</h3>
+    <div class="form-group"><label for="taskName" class="form-label">שם המשימה:</label> <input type="text" id="taskName" class="form-input" placeholder="לדוגמה: איסוף ציוד">
+    </div>
+    <div class="form-group"><label for="taskDesc" class="form-label">תיאור המשימה (הוראות):</label> <textarea id="taskDesc" class="form-textarea" placeholder="פרט את ההוראות למשימה"></textarea>
+    </div><button class="action-button" id="addTaskBtn">הו��ף משימה</button>
+   </div>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">רשימת משימ����ת</h3>
+    <div id="tasksList"></div>
+   </div>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">חלוקת קבוצות</h3>
+    <div class="form-group"><label for="groupName" class="form-label">שם החלוקה:</label> <input type="text" id="groupName" class="form-input" placeholder="לדוגמה: חלוקה א'">
+    </div><button class="action-button" id="createGroupBtn">צור חל��קה</button>
+   </div>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">רשימת חלוקות</h3>
+    <div id="groupsList"></div>
+   </div>
+  </div><!-- מסך עריכת חלוקה -->
+  <div class="secondary-screen" id="editGroupScreen"><button class="back-button" id="backFromEditGroup">← חזור</button>
+   <h2 class="section-title" id="editGroupTitle">עריכת חלוקה</h2>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">הוספת קבוצה</h3>
+    <div class="form-group"><label for="teamName" class="form-label">שם הקבוצה:</label> <input type="text" id="teamName" class="form-input" placeholder="לדוגמה: קבוצה אדומה">
+    </div>
+    <div class="form-group"><label for="teamMembers" class="form-label">ש��ות הילדים (מופרדים בפסיק):</label> <textarea id="teamMembers" class="form-textarea" placeholder="דוד, שרה, יוסי, רחל"></textarea>
+    </div><button class="action-button" id="addTeamBtn">ה��סף קבוצה</button>
+   </div>
+   <div class="content-card">
+    <h3 style="color: #667eea; margin-bottom: 20px;">קבוצות</h3>
+    <div id="teamsList"></div>
+   </div>
+  </div><!-- הודעת Toast -->
+  <div class="toast" id="toast"></div>
+  <script>
+    const defaultConfig = {
+      app_title: "מירוץ המשימות",
+      welcome_text: "ברוכים הבאים למירוץ המשימות!"
+    };
+
+    let currentEditingGroupId = null;
+    let allTasks = [];
+    let allGroups = [];
+    let allTeams = [];
+    let allGames = [];
+    let allGameTasks = [];
+    let currentActiveGame = null;
+    let selectedGroupForNewGame = null;
+    let currentTaskExecution = null;
+    let timerInterval = null;
+    let timerStartTime = null;
+    let finishedTeams = [];
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allTasks = data.filter(item => item.type === 'task');
+        allGroups = data.filter(item => item.type === 'group');
+        allTeams = data.filter(item => item.type === 'team');
+        allGames = data.filter(item => item.type === 'game');
+        allGameTasks = data.filter(item => item.type === 'gameTask');
+        
+        renderTasksList();
+        renderGroupsList();
+        if (currentEditingGroupId) {
+          renderTeamsList();
+        }
+        
+        if (document.getElementById('selectGroupForGame').style.display !== 'none') {
+          renderGroupSelectionForGame();
+        }
+        
+        if (document.getElementById('previousGamesList').innerHTML !== '') {
+          renderPreviousGames();
+        }
+        
+        if (currentActiveGame) {
+          const game = allGames.find(g => g.id === currentActiveGame);
+          if (game) {
+            renderDashboardContent();
+          }
+        }
+      }
+    };
+
+    async function onConfigChange(config) {
+      const title = config.app_title || defaultConfig.app_title;
+      const welcome = config.welcome_text || defaultConfig.welcome_text;
+      
+      document.getElementById('appTitle').textContent = title;
+      document.getElementById('welcomeText').textContent = welcome;
+    }
+
+    const capabilities = {
+      recolorables: [],
+      borderables: [],
+      fontEditable: undefined,
+      fontSizeable: undefined
+    };
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["app_title", config.app_title || defaultConfig.app_title],
+        ["welcome_text", config.welcome_text || defaultConfig.welcome_text]
+      ]);
+    }
+
+    async function init() {
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error("Failed to initialize data SDK");
+        }
+      }
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: () => capabilities,
+          mapToEditPanelValues
+        });
+      }
+
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      document.getElementById('loginButton').addEventListener('click', handleLogin);
+      document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+
+      document.getElementById('settingsBtn').addEventListener('click', () => showScreen('settings'));
+      document.getElementById('newGameBtn').addEventListener('click', handleNewGame);
+      document.getElementById('previousGamesBtn').addEventListener('click', handlePreviousGames);
+      
+      document.getElementById('backFromSettings').addEventListener('click', () => showScreen('main'));
+      document.getElementById('backFromEditGroup').addEventListener('click', () => {
+        currentEditingGroupId = null;
+        showScreen('settings');
+      });
+
+      document.getElementById('addTaskBtn').addEventListener('click', handleAddTask);
+      document.getElementById('createGroupBtn').addEventListener('click', handleCreateGroup);
+      document.getElementById('addTeamBtn').addEventListener('click', handleAddTeam);
+
+      // מסך משחק חדש
+      document.getElementById('backFromNewGame').addEventListener('click', () => {
+        selectedGroupForNewGame = null;
+        showScreen('main');
+      });
+      document.getElementById('startGameBtn').addEventListener('click', handleStartGame);
+
+      // מסך לוח מחוונ��ם
+      document.getElementById('backFromDashboard').addEventListener('click', () => showScreen('main'));
+      document.getElementById('selectTaskBtn').addEventListener('click', () => showScreen('selectTask'));
+      document.getElementById('showResultsBtn').addEventListener('click', showResults);
+      document.getElementById('showGroupDashBtn').addEventListener('click', showGroupModal);
+      document.getElementById('showPrevTasksBtn').addEventListener('click', showPreviousTasks);
+
+      // מסך בחירת משימה
+      document.getElementById('backFromSelectTask').addEventListener('click', () => showScreen('dashboard'));
+
+      // מסך ביצוע משימה
+      document.getElementById('backFromTaskExecution').addEventListener('click', () => {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        showScreen('dashboard');
+      });
+
+      // מסך תוצאות
+      document.getElementById('backFromResults').addEventListener('click', () => showScreen('dashboard'));
+
+      // מסך משימות קודמות
+      document.getElementById('backFromPrevTasks').addEventListener('click', () => showScreen('dashboard'));
+
+      // מסך משחקים קודמים
+      document.getElementById('backFromPreviousGames').addEventListener('click', () => showScreen('main'));
+
+      // חלונות צפים
+      document.getElementById('closeGroupModal').addEventListener('click', () => {
+        document.getElementById('groupModal').style.display = 'none';
+      });
+      document.getElementById('changeGroupBtn').addEventListener('click', () => {
+        document.getElementById('changeGroupModal').style.display = 'flex';
+        renderChangeGroupModal();
+      });
+      document.getElementById('closeChangeGroupModal').addEventListener('click', () => {
+        document.getElementById('changeGroupModal').style.display = 'none';
+      });
+
+      document.getElementById('closeGameDetailsModal').addEventListener('click', () => {
+        document.getElementById('gameDetailsModal').style.display = 'none';
+      });
+      document.getElementById('continueFromDetailsBtn').addEventListener('click', () => {
+        const gameId = document.getElementById('continueFromDetailsBtn').dataset.gameId;
+        const gameName = document.getElementById('continueFromDetailsBtn').dataset.gameName;
+        document.getElementById('gameDetailsModal').style.display = 'none';
+        continueGame(gameId, gameName);
+      });
+
+      document.getElementById('closeTaskDetailsModal').addEventListener('click', () => {
+        document.getElementById('taskDetailsModal').style.display = 'none';
+      });
+
+      document.getElementById('closeEditTaskResultsModal').addEventListener('click', () => {
+        document.getElementById('editTaskResultsModal').style.display = 'none';
+      });
+
+      document.getElementById('saveTaskResultsBtn').addEventListener('click', saveTaskResults);
+    }
+
+    function handleLogin() {
+      const password = document.getElementById('passwordInput').value;
+      const errorMsg = document.getElementById('errorMessage');
+      
+      if (password === '1234') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainScreen').style.display = 'block';
+        document.querySelector('.background-animation').style.display = 'none';
+        errorMsg.style.display = 'none';
+      } else {
+        errorMsg.style.display = 'block';
+      }
+    }
+
+    function showScreen(screen) {
+      document.getElementById('mainScreen').style.display = 'none';
+      document.getElementById('settingsScreen').style.display = 'none';
+      document.getElementById('editGroupScreen').style.display = 'none';
+      document.getElementById('newGameScreen').style.display = 'none';
+      document.getElementById('dashboardScreen').style.display = 'none';
+      document.getElementById('selectTaskScreen').style.display = 'none';
+      document.getElementById('taskExecutionScreen').style.display = 'none';
+      document.getElementById('resultsScreen').style.display = 'none';
+      document.getElementById('prevTasksScreen').style.display = 'none';
+      document.getElementById('previousGamesScreen').style.display = 'none';
+
+      if (screen === 'main') {
+        document.getElementById('mainScreen').style.display = 'block';
+      } else if (screen === 'settings') {
+        document.getElementById('settingsScreen').style.display = 'block';
+      } else if (screen === 'editGroup') {
+        document.getElementById('editGroupScreen').style.display = 'block';
+      } else if (screen === 'newGame') {
+        document.getElementById('newGameScreen').style.display = 'block';
+        renderGroupSelectionForGame();
+      } else if (screen === 'dashboard') {
+        document.getElementById('dashboardScreen').style.display = 'block';
+        renderDashboardContent();
+      } else if (screen === 'selectTask') {
+        document.getElementById('selectTaskScreen').style.display = 'block';
+        renderTasksForSelection();
+      } else if (screen === 'taskExecution') {
+        document.getElementById('taskExecutionScreen').style.display = 'block';
+      } else if (screen === 'results') {
+        document.getElementById('resultsScreen').style.display = 'block';
+      } else if (screen === 'prevTasks') {
+        document.getElementById('prevTasksScreen').style.display = 'block';
+      } else if (screen === 'previousGames') {
+        document.getElementById('previousGamesScreen').style.display = 'block';
+        renderPreviousGames();
+      }
+    }
+
+    function handleNewGame() {
+      if (allGroups.length === 0) {
+        showToast('אין חלוקות קבוצות. צור חלוקה בהגדרות תחילה');
+        return;
+      }
+      selectedGroupForNewGame = null;
+      showScreen('newGame');
+    }
+
+    function handlePreviousGames() {
+      showScreen('previousGames');
+    }
+
+    function renderGroupSelectionForGame() {
+      const container = document.getElementById('selectGroupForGame');
+      const startBtn = document.getElementById('startGameBtn');
+      
+      if (allGroups.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין חלוקות קבוצות. צור חלוקה בהגדרות</div>';
+        startBtn.disabled = true;
+        return;
+      }
+
+      container.innerHTML = allGroups.map(group => {
+        const teams = allTeams.filter(t => t.groupName === group.id);
+        const isSelected = selectedGroupForNewGame === group.id;
+        return `
+          <div class="list-item" style="cursor: pointer; border: 2px solid ${isSelected ? '#667eea' : 'transparent'};" onclick="selectGroupForGame('${group.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title">${group.groupName}</div>
+              <div class="list-item-desc">${teams.length} קבוצות</div>
+            </div>
+            ${isSelected ? '<span style="color: #667eea; font-weight: bold;">✓ נבחר</span>' : ''}
+          </div>
+        `;
+      }).join('');
+
+      startBtn.disabled = !selectedGroupForNewGame;
+    }
+
+    function selectGroupForGame(groupId) {
+      selectedGroupForNewGame = groupId;
+      renderGroupSelectionForGame();
+    }
+
+    async function handleStartGame() {
+      if (!selectedGroupForNewGame) {
+        showToast('נא לבחור חל��ק�� קבוצות');
+        return;
+      }
+
+      const teams = allTeams.filter(t => t.groupName === selectedGroupForNewGame);
+      if (teams.length === 0) {
+        showToast('החלוקה הנבחרת אינה מכילה קבוצות');
+        return;
+      }
+
+      const today = new Date();
+      const dateStr = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+      
+      const todayGames = allGames.filter(g => g.gameDate === dateStr);
+      const dailyCounter = todayGames.length + 1;
+      
+      const gameName = `מירוץ המשימות ${dateStr} (${dailyCounter})`;
+      
+      const gameData = {
+        id: Date.now().toString(),
+        type: 'game',
+        gameName: gameName,
+        gameDate: dateStr,
+        dailyCounter: dailyCounter,
+        activeGroupId: selectedGroupForNewGame,
+        status: 'active',
+        createdAt: new Date().toISOString()
+      };
+
+      const result = await window.dataSdk.create(gameData);
+      if (result.isOk) {
+        currentActiveGame = gameData.id;
+        document.getElementById('dashboardTitle').textContent = `לוח מחוונ��ם - ${gameName}`;
+        showScreen('dashboard');
+        showToast('המשחק התחיל!');
+      } else {
+        showToast('שגיאה ביצירת המשחק');
+      }
+    }
+
+    function renderDashboardContent() {
+      const container = document.getElementById('dashboardContent');
+      
+      if (!currentActiveGame) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">לחץ על "בחר משימה" להתחלת משימה חדשה</div>';
+        return;
+      }
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === currentActiveGame);
+      const uniqueTasks = [...new Set(gameTasks.map(gt => gt.taskId))];
+      
+      if (uniqueTasks.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">לחץ על "בחר משימה" להתחלת משימה חדשה</div>';
+      } else {
+        container.innerHTML = `<div style="text-align: center; padding: 20px; color: #666;">סך הכל ${uniqueTasks.length} משימות הושלמו</div>`;
+      }
+    }
+
+    function renderTasksForSelection() {
+      const container = document.getElementById('tasksForSelection');
+      
+      if (allTasks.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין משימות. הוסף משימות בהגדרות</div>';
+        return;
+      }
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === currentActiveGame);
+      const completedTaskIds = [...new Set(gameTasks.map(gt => gt.taskId))];
+      
+      const availableTasks = allTasks.filter(t => !completedTaskIds.includes(t.id));
+      const completedTasks = allTasks.filter(t => completedTaskIds.includes(t.id));
+
+      let html = '';
+      
+      if (availableTasks.length > 0) {
+        html += '<h3 style="color: #667eea; margin-bottom: 15px;">משימות זמינות</h3>';
+        html += availableTasks.map(task => `
+          <div class="list-item" style="cursor: pointer;" onclick="startTaskExecution('${task.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title">${task.name}</div>
+              <div class="list-item-desc">${task.description}</div>
+            </div>
+            <button class="action-button">התחל →</button>
+          </div>
+        `).join('');
+      }
+      
+      if (completedTasks.length > 0) {
+        html += '<h3 style="color: #999; margin: 30px 0 15px 0;">משימות שבוצעו</h3>';
+        html += completedTasks.map(task => `
+          <div class="list-item" style="cursor: pointer; opacity: 0.6; background: #e8e8e8;" onclick="startTaskExecution('${task.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title" style="color: #666;">${task.name}</div>
+              <div class="list-item-desc" style="color: #999;">${task.description}</div>
+            </div>
+            <button class="action-button secondary">התחל שוב →</button>
+          </div>
+        `).join('');
+      }
+
+      container.innerHTML = html;
+    }
+
+    function startTaskExecution(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      currentTaskExecution = {
+        taskId: taskId,
+        taskName: task.name,
+        taskDesc: task.description
+      };
+
+      document.getElementById('taskExecTitle').textContent = task.name;
+      
+      const detailsHtml = `
+        <h3 style="color: #667eea; margin-bottom: 15px;">${task.name}</h3>
+        <p style="color: #666; line-height: 1.6;">${task.description}</p>
+      `;
+      
+      document.getElementById('taskDetails').innerHTML = detailsHtml;
+      
+      const timerHtml = `
+        <div style="text-align: center;">
+          <button class="action-button" id="startTimerBtn" style="font-size: 20px; padding: 20px 40px;">התחל טיימר</button>
+        </div>
+      `;
+      
+      document.getElementById('timerSection').innerHTML = timerHtml;
+      document.getElementById('startTimerBtn').addEventListener('click', startTimer);
+      
+      showScreen('taskExecution');
+    }
+
+    function startTimer() {
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      const teams = allTeams.filter(t => t.groupName === game.activeGroupId);
+      if (teams.length === 0) return;
+
+      timerStartTime = Date.now();
+      finishedTeams = [];
+      
+      let timerHtml = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; font-weight: bold; color: #667eea; margin-bottom: 20px;" id="timerDisplay">00:00</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+      `;
+      
+      teams.forEach((team, index) => {
+        timerHtml += `
+          <div id="teamTimer${index}">
+            <button class="action-button" style="width: 100%; padding: 20px;" onclick="stopTeamTimer('${team.id}', ${index}, '${team.teamName}')">
+              עצור טיימר<br>${team.teamName}
+            </button>
+          </div>
+        `;
+      });
+      
+      timerHtml += '</div>';
+      
+      document.getElementById('timerSection').innerHTML = timerHtml;
+      
+      timerInterval = setInterval(updateTimerDisplay, 100);
+    }
+
+    function updateTimerDisplay() {
+      if (!timerStartTime) return;
+      
+      const elapsed = Date.now() - timerStartTime;
+      const seconds = Math.floor(elapsed / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      
+      const display = `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+      const displayElement = document.getElementById('timerDisplay');
+      if (displayElement) {
+        displayElement.textContent = display;
+      }
+    }
+
+    function stopTeamTimer(teamId, teamIndex, teamName) {
+      if (finishedTeams.find(ft => ft.teamId === teamId)) {
+        showToast('הקבוצה כבר סיימה');
+        return;
+      }
+
+      const completedTime = Date.now() - timerStartTime;
+      const rank = finishedTeams.length + 1;
+      
+      finishedTeams.push({
+        teamId: teamId,
+        teamName: teamName,
+        rank: rank,
+        completedTime: completedTime
+      });
+
+      const teamContainer = document.getElementById(`teamTimer${teamIndex}`);
+      if (teamContainer) {
+        teamContainer.innerHTML = `
+          <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; text-align: center;">
+            <div style="font-weight: bold; color: #667eea; margin-bottom: 10px;">${teamName}</div>
+            <div style="color: #666;">מקום ${rank}</div>
+            <div style="margin-top: 10px;">
+              <button class="action-button" style="width: 100%; margin-bottom: 5px;" onclick="confirmTeamComplete('${teamId}', true)">כל הקבוצה הגי��ה</button>
+              <button class="action-button secondary" style="width: 100%;" onclick="confirmTeamComplete('${teamId}', false)">חסרים ילדים</button>
+            </div>
+          </div>
+        `;
+      }
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      const teams = allTeams.filter(t => t.groupName === game.activeGroupId);
+      
+      if (finishedTeams.length === teams.length) {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+    }
+
+    async function confirmTeamComplete(teamId, allPresent) {
+      const finished = finishedTeams.find(ft => ft.teamId === teamId);
+      if (!finished) return;
+
+      let points = 0;
+      if (allPresent) {
+        if (finished.rank === 1) points = 3;
+        else if (finished.rank === 2) points = 2;
+        else if (finished.rank === 3) points = 1;
+        else points = 0;
+      }
+
+      const gameTaskData = {
+        id: Date.now().toString() + Math.random(),
+        type: 'gameTask',
+        gameName: currentActiveGame,
+        taskId: currentTaskExecution.taskId,
+        teamName: teamId,
+        rank: finished.rank,
+        completedTime: finished.completedTime,
+        allMembersPresent: allPresent,
+        points: points,
+        createdAt: new Date().toISOString()
+      };
+
+      const result = await window.dataSdk.create(gameTaskData);
+      if (result.isOk) {
+        const allConfirmed = finishedTeams.every(ft => {
+          return allGameTasks.some(gt => gt.teamName === ft.teamId && gt.taskId === currentTaskExecution.taskId);
+        });
+
+        if (allConfirmed) {
+          showToast('המשימה הושלמה!');
+          setTimeout(() => {
+            showScreen('dashboard');
+          }, 1500);
+        } else {
+          showToast('תוצאת הקבוצה נשמרה');
+        }
+      } else {
+        showToast('שגיאה בשמירת התוצאה');
+      }
+    }
+
+    function showResults() {
+      if (!currentActiveGame) {
+        showToast('אין משחק פעיל');
+        return;
+      }
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      const teams = allTeams.filter(t => t.groupName === game.activeGroupId);
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === currentActiveGame);
+
+      const teamScores = teams.map(team => {
+        const teamTasks = gameTasks.filter(gt => gt.teamName === team.id);
+        const totalPoints = teamTasks.reduce((sum, gt) => sum + gt.points, 0);
+        return {
+          teamName: team.teamName,
+          totalPoints: totalPoints
+        };
+      });
+
+      teamScores.sort((a, b) => b.totalPoints - a.totalPoints);
+
+      let html = '<h3 style="color: #667eea; margin-bottom: 20px;">לוח ניקוד</h3>';
+      
+      teamScores.forEach((team, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+        html += `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${medal} מקום ${index + 1}: ${team.teamName}</div>
+            </div>
+            <div style="font-size: 24px; font-weight: bold; color: #667eea;">${team.totalPoints} נק'</div>
+          </div>
+        `;
+      });
+
+      document.getElementById('resultsContent').innerHTML = html;
+      showScreen('results');
+    }
+
+    function showPreviousTasks() {
+      if (!currentActiveGame) {
+        showToast('אין משחק פעיל');
+        return;
+      }
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === currentActiveGame);
+      
+      if (gameTasks.length === 0) {
+        document.getElementById('prevTasksContent').innerHTML = '<div class="empty-state">אין משימות קודמות במשחק זה</div>';
+        showScreen('prevTasks');
+        return;
+      }
+
+      const taskIds = [...new Set(gameTasks.map(gt => gt.taskId))];
+      
+      let html = '';
+      taskIds.forEach(taskId => {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+        
+        html += `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${task.name}</div>
+            </div>
+            <div>
+              <button class="action-button" style="margin-left: 10px;" onclick="viewTaskDetails('${taskId}')">הצג</button>
+              <button class="action-button secondary" onclick="editTaskResults('${taskId}')">ערוך</button>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('prevTasksContent').innerHTML = html;
+      showScreen('prevTasks');
+    }
+
+    function viewTaskDetails(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === currentActiveGame && gt.taskId === taskId);
+      
+      document.getElementById('taskDetailsModalTitle').textContent = task.name;
+      
+      let html = `
+        <div style="margin-bottom: 20px;">
+          <h4 style="color: #667eea; margin-bottom: 10px;">תיאור המשימה</h4>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; line-height: 1.6;">
+            ${task.description}
+          </div>
+        </div>
+        <div>
+          <h4 style="color: #667eea; margin-bottom: 10px;">תוצאות</h4>
+      `;
+      
+      const sortedResults = [...gameTasks].sort((a, b) => a.rank - b.rank);
+      
+      sortedResults.forEach(result => {
+        const team = allTeams.find(t => t.id === result.teamName);
+        const teamName = team ? team.teamName : 'לא ידוע';
+        
+        html += `
+          <div class="list-item" style="margin-bottom: 10px;">
+            <div class="list-item-content">
+              <div class="list-item-title">מקום ${result.rank}: ${teamName}</div>
+              <div class="list-item-desc">${result.allMembersPresent ? 'כל הקבוצה הגיעה' : 'חסרו ילדים'}</div>
+            </div>
+            <div style="font-size: 20px; font-weight: bold; color: #667eea;">${result.points} נק'</div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+
+      document.getElementById('taskDetailsModalContent').innerHTML = html;
+      document.getElementById('taskDetailsModal').style.display = 'flex';
+    }
+
+    let currentEditingTaskResults = null;
+
+    function editTaskResults(taskId) {
+      const task = allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === currentActiveGame && gt.taskId === taskId);
+      currentEditingTaskResults = gameTasks;
+      
+      document.getElementById('editTaskResultsTitle').textContent = `עריכת תוצאות: ${task.name}`;
+      
+      let html = '';
+      
+      const sortedResults = [...gameTasks].sort((a, b) => a.rank - b.rank);
+      
+      sortedResults.forEach((result, index) => {
+        const team = allTeams.find(t => t.id === result.teamName);
+        const teamName = team ? team.teamName : 'לא ידוע';
+        
+        html += `
+          <div class="list-item" style="margin-bottom: 15px;">
+            <div style="flex: 1;">
+              <div style="font-weight: bold; color: #333; margin-bottom: 10px;">${teamName}</div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 5px;">
+                  <span style="font-size: 14px;">מקום:</span>
+                  <input type="number" min="1" value="${result.rank}" 
+                    style="width: 60px; padding: 5px; border: 2px solid #e0e0e0; border-radius: 5px;"
+                    data-result-id="${result.__backendId}" data-field="rank">
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px;">
+                  <input type="checkbox" ${result.allMembersPresent ? 'checked' : ''}
+                    data-result-id="${result.__backendId}" data-field="allMembersPresent">
+                  <span style="font-size: 14px;">כל הקבוצה הגיעה</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px;">
+                  <span style="font-size: 14px;">נקודות:</span>
+                  <input type="number" min="0" value="${result.points}" 
+                    style="width: 60px; padding: 5px; border: 2px solid #e0e0e0; border-radius: 5px;"
+                    data-result-id="${result.__backendId}" data-field="points">
+                </label>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      document.getElementById('editTaskResultsContent').innerHTML = html;
+      document.getElementById('editTaskResultsModal').style.display = 'flex';
+    }
+
+    async function saveTaskResults() {
+      const inputs = document.querySelectorAll('[data-result-id]');
+      const updates = new Map();
+
+      inputs.forEach(input => {
+        const backendId = input.dataset.resultId;
+        const field = input.dataset.field;
+        
+        if (!updates.has(backendId)) {
+          const result = currentEditingTaskResults.find(r => r.__backendId === backendId);
+          if (result) {
+            updates.set(backendId, { ...result });
+          }
+        }
+
+        const resultUpdate = updates.get(backendId);
+        if (resultUpdate) {
+          if (field === 'rank') {
+            resultUpdate.rank = parseInt(input.value) || 1;
+          } else if (field === 'allMembersPresent') {
+            resultUpdate.allMembersPresent = input.checked;
+          } else if (field === 'points') {
+            resultUpdate.points = parseInt(input.value) || 0;
+          }
+        }
+      });
+
+      let successCount = 0;
+      for (const [backendId, resultUpdate] of updates) {
+        const updateResult = await window.dataSdk.update(resultUpdate);
+        if (updateResult.isOk) {
+          successCount++;
+        }
+      }
+
+      if (successCount === updates.size) {
+        document.getElementById('editTaskResultsModal').style.display = 'none';
+        showToast('התוצאות עודכנו בהצלחה');
+        currentEditingTaskResults = null;
+      } else {
+        showToast('שגיאה בעדכון חלק מהתוצאות');
+      }
+    }
+
+    function showGroupModal() {
+      if (!currentActiveGame) {
+        showToast('אין משחק פעיל');
+        return;
+      }
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      const group = allGroups.find(g => g.id === game.activeGroupId);
+      const teams = allTeams.filter(t => t.groupName === game.activeGroupId);
+
+      let html = `<h4 style="margin-bottom: 15px;">${group ? group.groupName : 'לא ידוע'}</h4>`;
+      html += '<div class="teams-container">';
+      
+      teams.forEach(team => {
+        html += `
+          <div class="team-card">
+            <div class="team-name">${team.teamName}</div>
+            <div class="team-members">${team.teams}</div>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+
+      document.getElementById('groupModalContent').innerHTML = html;
+      document.getElementById('groupModal').style.display = 'flex';
+    }
+
+    function renderChangeGroupModal() {
+      const container = document.getElementById('changeGroupContent');
+      
+      container.innerHTML = allGroups.map(group => {
+        const teams = allTeams.filter(t => t.groupName === group.id);
+        return `
+          <div class="list-item" style="cursor: pointer;" onclick="changeActiveGroup('${group.id}')">
+            <div class="list-item-content">
+              <div class="list-item-title">${group.groupName}</div>
+              <div class="list-item-desc">${teams.length} קבוצות</div>
+            </div>
+            <button class="action-button">בחר</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function changeActiveGroup(newGroupId) {
+      if (!currentActiveGame) return;
+
+      const game = allGames.find(g => g.id === currentActiveGame);
+      if (!game) return;
+
+      game.activeGroupId = newGroupId;
+      
+      const result = await window.dataSdk.update(game);
+      if (result.isOk) {
+        document.getElementById('changeGroupModal').style.display = 'none';
+        document.getElementById('groupModal').style.display = 'none';
+        showToast('החלוקה שונתה בהצלחה');
+        renderDashboardContent();
+      } else {
+        showToast('שגיאה בשינוי החלוקה');
+      }
+    }
+
+    function renderPreviousGames() {
+      const container = document.getElementById('previousGamesList');
+      
+      const previousGames = allGames.filter(g => g.status === 'active' || g.status === 'completed');
+      
+      if (previousGames.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין משחקים קודמים</div>';
+        return;
+      }
+
+      previousGames.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      container.innerHTML = previousGames.map(game => {
+        const gameTasks = allGameTasks.filter(gt => gt.gameName === game.id);
+        const uniqueTasks = [...new Set(gameTasks.map(gt => gt.taskId))];
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${game.gameName}</div>
+            </div>
+            <div>
+              <button class="action-button" style="margin-left: 10px;" onclick="viewGameDetails('${game.id}')">צפה</button>
+              <button class="action-button secondary" onclick="continueGame('${game.id}', '${game.gameName}')">המשך</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewGameDetails(gameId) {
+      const game = allGames.find(g => g.id === gameId);
+      if (!game) return;
+
+      document.getElementById('gameDetailsTitle').textContent = game.gameName;
+      
+      const group = allGroups.find(g => g.id === game.activeGroupId);
+      const teams = allTeams.filter(t => t.groupName === game.activeGroupId);
+      const gameTasks = allGameTasks.filter(gt => gt.gameName === game.id);
+      const uniqueTaskIds = [...new Set(gameTasks.map(gt => gt.taskId))];
+
+      let html = `
+        <div style="margin-bottom: 25px;">
+          <h4 style="color: #667eea; margin-bottom: 10px;">פרטי המשחק</h4>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <div style="margin-bottom: 8px;"><strong>תאריך:</strong> ${game.gameDate}</div>
+            <div style="margin-bottom: 8px;"><strong>חלוקת קבוצות:</strong> ${group ? group.groupName : 'לא ידוע'}</div>
+            <div><strong>מספר משימות:</strong> ${uniqueTaskIds.length}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+          <h4 style="color: #667eea; margin-bottom: 10px;">קבוצות</h4>
+          <div class="teams-container">
+      `;
+      
+      teams.forEach(team => {
+        html += `
+          <div class="team-card">
+            <div class="team-name">${team.teamName}</div>
+            <div class="team-members">${team.teams}</div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+
+      if (uniqueTaskIds.length > 0) {
+        html += '<div><h4 style="color: #667eea; margin-bottom: 10px;">לוח ניקוד</h4>';
+        
+        const teamScores = teams.map(team => {
+          const teamTasks = gameTasks.filter(gt => gt.teamName === team.id);
+          const totalPoints = teamTasks.reduce((sum, gt) => sum + gt.points, 0);
+          return {
+            teamName: team.teamName,
+            totalPoints: totalPoints
+          };
+        });
+
+        teamScores.sort((a, b) => b.totalPoints - a.totalPoints);
+
+        teamScores.forEach((team, index) => {
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+          html += `
+            <div class="list-item" style="margin-bottom: 10px;">
+              <div class="list-item-content">
+                <div class="list-item-title">${medal} מקום ${index + 1}: ${team.teamName}</div>
+              </div>
+              <div style="font-size: 24px; font-weight: bold; color: #667eea;">${team.totalPoints} נק'</div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+      }
+
+      document.getElementById('gameDetailsContent').innerHTML = html;
+      document.getElementById('continueFromDetailsBtn').dataset.gameId = gameId;
+      document.getElementById('continueFromDetailsBtn').dataset.gameName = game.gameName;
+      document.getElementById('gameDetailsModal').style.display = 'flex';
+    }
+
+    function continueGame(gameId, gameName) {
+      currentActiveGame = gameId;
+      document.getElementById('dashboardTitle').textContent = `לוח מחוונים - ${gameName}`;
+      showScreen('dashboard');
+      showToast('ממשיך משחק');
+    }
+
+    async function handleAddTask() {
+      const name = document.getElementById('taskName').value.trim();
+      const description = document.getElementById('taskDesc').value.trim();
+
+      if (!name || !description) {
+        showToast('נא למלא את כל השדות');
+        return;
+      }
+
+      if (allTasks.length >= 999) {
+        showToast('הגעת למגבלה המקסימלית של 999 משימות');
+        return;
+      }
+
+      const taskData = {
+        id: Date.now().toString(),
+        type: 'task',
+        name: name,
+        description: description,
+        createdAt: new Date().toISOString()
+      };
+
+      const result = await window.dataSdk.create(taskData);
+      if (result.isOk) {
+        document.getElementById('taskName').value = '';
+        document.getElementById('taskDesc').value = '';
+        showToast('המשימה נוספה בהצלחה');
+      } else {
+        showToast('שגיאה בה��ספת המשימה');
+      }
+    }
+
+    async function handleCreateGroup() {
+      const groupName = document.getElementById('groupName').value.trim();
+
+      if (!groupName) {
+        showToast('נא להזין שם לחלוקה');
+        return;
+      }
+
+      if (allGroups.length >= 999) {
+        showToast('הגעת למגבלה המקסימלית של 999 חלוקות');
+        return;
+      }
+
+      const groupData = {
+        id: Date.now().toString(),
+        type: 'group',
+        groupName: groupName,
+        createdAt: new Date().toISOString()
+      };
+
+      const result = await window.dataSdk.create(groupData);
+      if (result.isOk) {
+        document.getElementById('groupName').value = '';
+        showToast('החלוקה נוצרה בהצלחה');
+      } else {
+        showToast('שגיאה ביצירת החלוקה');
+      }
+    }
+
+    async function handleAddTeam() {
+      const teamName = document.getElementById('teamName').value.trim();
+      const members = document.getElementById('teamMembers').value.trim();
+
+      if (!teamName || !members) {
+        showToast('נא למלא את כל השדות');
+        return;
+      }
+
+      const currentTeams = allTeams.filter(t => t.groupName === currentEditingGroupId);
+      if (currentTeams.length >= 4) {
+        showToast('ניתן להוסיף עד 4 קבוצות בלבד');
+        return;
+      }
+
+      if (allTeams.length >= 999) {
+        showToast('הגעת למגבלה המקסימלית');
+        return;
+      }
+
+      const teamData = {
+        id: Date.now().toString(),
+        type: 'team',
+        groupName: currentEditingGroupId,
+        teamName: teamName,
+        teams: members,
+        createdAt: new Date().toISOString()
+      };
+
+      const result = await window.dataSdk.create(teamData);
+      if (result.isOk) {
+        document.getElementById('teamName').value = '';
+        document.getElementById('teamMembers').value = '';
+        showToast('הקבוצה נוספה בהצלחה');
+      } else {
+        showToast('שגיאה בהוספת הקבוצה');
+      }
+    }
+
+    function renderTasksList() {
+      const container = document.getElementById('tasksList');
+      
+      if (allTasks.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין משימות עדיין. הוסף את המשימה הראשונה!</div>';
+        return;
+      }
+
+      container.innerHTML = allTasks.map(task => `
+        <div class="list-item">
+          <div class="list-item-content">
+            <div class="list-item-title">${task.name}</div>
+            <div class="list-item-desc">${task.description}</div>
+          </div>
+          <div>
+            <button class="action-button" style="margin-left: 10px;" onclick="editTask('${task.__backendId}')">ערוך</button>
+            <button class="delete-button" onclick="deleteTask('${task.__backendId}')">מחק</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderGroupsList() {
+      const container = document.getElementById('groupsList');
+      
+      if (allGroups.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין חלוקות עדיין. צור את החלוקה הראשונה!</div>';
+        return;
+      }
+
+      container.innerHTML = allGroups.map(group => {
+        const teams = allTeams.filter(t => t.groupName === group.id);
+        return `
+          <div class="list-item">
+            <div class="list-item-content">
+              <div class="list-item-title">${group.groupName}</div>
+              <div class="list-item-desc">${teams.length} קבוצות</div>
+            </div>
+            <div>
+              <button class="action-button" style="margin-left: 10px;" onclick="editGroup('${group.id}', '${group.groupName}')">ערוך</button>
+              <button class="delete-button" onclick="deleteGroup('${group.__backendId}')">מחק</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTeamsList() {
+      const container = document.getElementById('teamsList');
+      const teams = allTeams.filter(t => t.groupName === currentEditingGroupId);
+      
+      if (teams.length === 0) {
+        container.innerHTML = '<div class="empty-state">אין קבוצות בחלוקה זו. הוסף את הק��וצה הראשונה!</div>';
+        return;
+      }
+
+      container.innerHTML = teams.map(team => `
+        <div class="list-item">
+          <div class="list-item-content">
+            <div class="list-item-title">${team.teamName}</div>
+            <div class="list-item-desc">${team.teams}</div>
+          </div>
+          <button class="delete-button" onclick="deleteTeam('${team.__backendId}')">מחק</button>
+        </div>
+      `).join('');
+    }
+
+    function editGroup(groupId, groupName) {
+      currentEditingGroupId = groupId;
+      document.getElementById('editGroupTitle').textContent = `עריכת חלוקה: ${groupName}`;
+      renderTeamsList();
+      showScreen('editGroup');
+    }
+
+    function editTask(backendId) {
+      const task = allTasks.find(t => t.__backendId === backendId);
+      if (!task) return;
+
+      document.getElementById('taskName').value = task.name;
+      document.getElementById('taskDesc').value = task.description;
+      
+      const addBtn = document.getElementById('addTaskBtn');
+      addBtn.textContent = 'שמור שינויים';
+      addBtn.onclick = async () => {
+        const name = document.getElementById('taskName').value.trim();
+        const description = document.getElementById('taskDesc').value.trim();
+
+        if (!name || !description) {
+          showToast('נא למלא את כל השדות');
+          return;
+        }
+
+        task.name = name;
+        task.description = description;
+
+        const result = await window.dataSdk.update(task);
+        if (result.isOk) {
+          document.getElementById('taskName').value = '';
+          document.getElementById('taskDesc').value = '';
+          addBtn.textContent = 'הוסף משימה';
+          addBtn.onclick = handleAddTask;
+          showToast('המשימה עודכנה בהצלחה');
+        } else {
+          showToast('שגיאה בעדכון המשימה');
+        }
+      };
+      
+      showToast('ערוך את המשימה ולחץ שמור');
+    }
+
+    async function deleteTask(backendId) {
+      const task = allTasks.find(t => t.__backendId === backendId);
+      if (!task) return;
+
+      const result = await window.dataSdk.delete(task);
+      if (result.isOk) {
+        showToast('המשימה נמחקה בהצלחה');
+      } else {
+        showToast('שגיאה במחיקת המשימה');
+      }
+    }
+
+    async function deleteGroup(backendId) {
+      const group = allGroups.find(g => g.__backendId === backendId);
+      if (!group) return;
+
+      const teamsToDelete = allTeams.filter(t => t.groupName === group.id);
+      
+      for (const team of teamsToDelete) {
+        await window.dataSdk.delete(team);
+      }
+
+      const result = await window.dataSdk.delete(group);
+      if (result.isOk) {
+        showToast('החלוקה נמחקה בהצלחה');
+      } else {
+        showToast('שגיאה במחיקת החלוקה');
+      }
+    }
+
+    async function deleteTeam(backendId) {
+      const team = allTeams.find(t => t.__backendId === backendId);
+      if (!team) return;
+
+      const result = await window.dataSdk.delete(team);
+      if (result.isOk) {
+        showToast('הקבוצה נמחקה בהצלחה');
+      } else {
+        showToast('שגיאה במחיקת הקבוצה');
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    init();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a2a780535edc231',t:'MTc2MzgzNTkyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
